@@ -1,0 +1,75 @@
+{
+    "$schema": "https://getcomposer.org/schema.json",
+    "name": "kreetancraft/laravel-travel-invoicing",
+    "description": "Unified commercial quotes, proposals, and tax invoicing package for Laravel with deposit milestones, in-browser business settings, PDF rendering, and client payment portals.",
+    "keywords": [
+        "laravel",
+        "quotes",
+        "invoices",
+        "proposals",
+        "billing",
+        "travel",
+        "trekking",
+        "payments",
+        "flux"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "KreetanCraft",
+            "email": "dev@kreetancraft.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^11.0|^12.0|^13.0",
+        "livewire/flux": "^1.0|^2.0",
+        "livewire/livewire": "^3.0|^4.0",
+        "lorisleiva/laravel-actions": "^2.7|^3.0",
+        "nesbot/carbon": "^2.0|^3.0"
+    },
+    "require-dev": {
+        "fakerphp/faker": "^1.24",
+        "laravel/pint": "^1.20",
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.0|^4.0",
+        "pestphp/pest-plugin-laravel": "^3.0|^4.0",
+        "spatie/laravel-permission": "^5.0|^6.0|^7.0|^8.0"
+    },
+    "suggest": {
+        "kreetancraft/laravel-media-manager": "Company branding logos, stamp uploads, and proposal media attachments.",
+        "kreetancraft/laravel-user-management": "Discovers quote & invoice policies and creates their permissions automatically.",
+        "kreetancraft/laravel-travel-customers": "Links quotes and invoices to traveler profiles and customer groups.",
+        "kreetancraft/laravel-payment-gateway": "Enables instant online card, bank, and QR payments from client invoice portals."
+    },
+    "autoload": {
+        "psr-4": {
+            "Kreetancraft\\TravelInvoicing\\": "src/",
+            "Kreetancraft\\TravelInvoicing\\Database\\Factories\\": "database/factories/",
+            "Kreetancraft\\TravelInvoicing\\Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kreetancraft\\TravelInvoicing\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kreetancraft\\TravelInvoicing\\Providers\\TravelInvoicingServiceProvider"
+            ],
+            "aliases": {
+                "TravelInvoicing": "Kreetancraft\\TravelInvoicing\\Facades\\TravelInvoicing"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
