@@ -1,4 +1,7 @@
 /vendor
+/node_modules
+package-lock.json
+package.json
 /.phpunit.cache
 .phpunit.result.cache
 composer.lock

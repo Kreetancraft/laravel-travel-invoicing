@@ -34,6 +34,8 @@
         "orchestra/testbench": "^9.0|^10.0",
         "pestphp/pest": "^3.0|^4.0",
         "pestphp/pest-plugin-laravel": "^3.0|^4.0",
+        "spatie/browsershot": "^5.4",
+        "spatie/laravel-pdf": "^2.13",
         "spatie/laravel-permission": "^5.0|^6.0|^7.0|^8.0"
     },
     "suggest": {

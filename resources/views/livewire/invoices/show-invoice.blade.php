@@ -142,18 +142,39 @@
         <form wire:submit.prevent="recordPayment" class="space-y-4">
             <flux:heading size="lg">{{ __('Record Payment for ') }} {{ $invoice->invoice_number }}</flux:heading>
             
-            <flux:input wire:model="paymentAmountCents" label="{{ __('Amount in Cents') }}" type="number" min="1" max="{{ $invoice->balanceDueCents() }}" required />
-            <p class="text-xs text-zinc-500">{{ __('Balance Due: ') }}<strong class="font-mono text-zinc-800 dark:text-zinc-200">{{ $invoice->formatted_balance_due }}</strong></p>
+            {{--
+                The amount as it appears on the invoice. This asked for cents, so
+                recording $3,240.00 meant typing 324000 — arithmetic in your head
+                and a number three orders of magnitude larger than the one you
+                are looking at. One slip is a payment a hundred times too big.
+            --}}
+            <flux:input
+                wire:model="paymentAmount"
+                label="{{ __('Amount (:currency)', ['currency' => strtoupper($invoice->currency)]) }}"
+                type="number"
+                step="0.01"
+                min="0.01"
+                max="{{ number_format($invoice->balanceDueCents() / 100, 2, '.', '') }}"
+                required
+            />
+            <p class="text-xs text-zinc-500">{{ __('Outstanding: ') }}<strong class="font-mono text-zinc-800 dark:text-zinc-200">{{ $invoice->formatted_balance_due }}</strong></p>
 
-            <flux:select wire:model="paymentGateway" label="{{ __('Payment Method / Gateway') }}" required>
-                <option value="bank_transfer">{{ __('Bank Wire Transfer') }}</option>
-                <option value="stripe">{{ __('Stripe Credit Card') }}</option>
-                <option value="himalayan">{{ __('Himalayan Bank Gateway') }}</option>
-                <option value="cash">{{ __('Cash / In-Person') }}</option>
-                <option value="manual">{{ __('Other Manual') }}</option>
+            {{--
+                Manual methods only. Stripe and the bank record themselves when
+                their webhook lands, so offering them here invites a payment with
+                no gateway reference — which the real webhook then records again.
+            --}}
+            <flux:select wire:model.live="paymentGateway" label="{{ __('How was it paid?') }}" required>
+                @foreach ($this->paymentMethods() as $value => $label)
+                    <option value="{{ $value }}">{{ $label }}</option>
+                @endforeach
             </flux:select>
 
-            <flux:input wire:model="paymentReference" label="{{ __('Transaction Reference / Slip #') }}" placeholder="e.g. TXN-998811" />
+            <flux:input
+                wire:model="paymentReference"
+                label="{{ __('Reference') }}"
+                description="{{ __('Generated for you. Replace it with the bank slip or cheque number if you have one.') }}"
+            />
             <flux:textarea wire:model="paymentNotes" label="{{ __('Payment Notes') }}" placeholder="Optional notes..." rows="2" />
 
             <div class="flex justify-end gap-3 pt-3">
