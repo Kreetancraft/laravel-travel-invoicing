@@ -5,31 +5,34 @@ declare(strict_types=1);
 namespace Kreetancraft\TravelInvoicing\Http\Controllers;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use Kreetancraft\TravelInvoicing\Contracts\InvoicesContract;
 use Kreetancraft\TravelInvoicing\Contracts\InvoicingSettingsContract;
+use Kreetancraft\TravelInvoicing\Http\Controllers\Concerns\ServesDocumentPdf;
 
 class InvoicePdfController extends Controller
 {
+    use ServesDocumentPdf;
+
     /**
-     * The printable invoice.
+     * The invoice as a file to keep.
      *
-     * Named `show` because that is what `routes/public.php` asks for. It was
-     * `renderPdf`, so every request to this route raised a BadMethodCallException
-     * — the page could never have been reached.
+     * Named `show` because that is what routes/public.php asks for; it was
+     * `renderPdf`, so this route raised BadMethodCallException and could never
+     * be reached at all.
      */
-    public function show(string $token, InvoicesContract $invoices, InvoicingSettingsContract $settings): View
+    public function show(string $token, InvoicesContract $invoices, InvoicingSettingsContract $settings): Response|View
     {
         $invoice = $invoices->findByToken($token);
 
         abort_if(! $invoice, 404, 'Invoice not found.');
 
-        return view('travel-invoicing::pdf.tax-invoice', [
-            'invoice' => $invoice,
-            // The view reads `$settings`. This used to pass `$business` from
-            // `travel-invoicing.business`, a config key that does not exist — so
-            // the variable the template actually uses was never set.
-            'settings' => $settings->get(),
-        ]);
+        return $this->pdfResponse(
+            view: 'travel-invoicing::pdf.tax-invoice',
+            data: ['invoice' => $invoice, 'settings' => $settings->get()],
+            filename: $invoice->invoice_number.'.pdf',
+            storedPath: $invoice->pdf_path,
+        );
     }
 }

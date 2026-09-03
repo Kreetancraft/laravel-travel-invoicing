@@ -193,3 +193,58 @@ it('leaves settled and cancelled invoices alone', function (): void {
     expect($paid->fresh()->status)->toBe(InvoiceStatus::Paid)
         ->and($void->fresh()->status)->toBe(InvoiceStatus::Void);
 });
+
+it('downloads a file rather than showing the invoice on screen', function (): void {
+    // "Download PDF" returned the Blade view, so it opened the invoice in the
+    // browser. A printable page is not a download.
+    Storage::fake('local');
+    config()->set('travel-invoicing.pdf.renderer', fn (string $html): string => '%PDF-1.4 stored');
+
+    $invoice = draftInvoice();
+    (new GenerateInvoicePdfJob($invoice->id))->handle(
+        app(InvoicingSettingsContract::class)
+    );
+
+    $this->get("/portal/invoices/{$invoice->fresh()->public_token}/pdf")
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf')
+        ->assertHeader('content-disposition', 'attachment; filename="'.$invoice->invoice_number.'.pdf"');
+});
+
+it('renders on demand when the queue has not got there yet', function (): void {
+    // Somebody clicked download before the job ran. They are waiting for a file,
+    // so make one.
+    config()->set('travel-invoicing.pdf.renderer', fn (string $html): string => '%PDF-1.4 on-demand');
+
+    $invoice = draftInvoice();
+
+    expect($invoice->pdf_path)->toBeNull();
+
+    $this->get("/portal/invoices/{$invoice->public_token}/pdf")
+        ->assertOk()
+        ->assertHeader('content-type', 'application/pdf');
+});
+
+it('still shows the printable page when no renderer is configured', function (): void {
+    // The old behaviour, kept: better than an error on a host that has not
+    // installed a PDF engine.
+    config()->set('travel-invoicing.pdf.renderer', null);
+
+    $invoice = draftInvoice();
+
+    $this->get("/portal/invoices/{$invoice->public_token}/pdf")
+        ->assertOk()
+        ->assertSee($invoice->invoice_number);
+});
+
+it('falls back to the printable page when rendering fails', function (): void {
+    config()->set('travel-invoicing.pdf.renderer', function (string $html): string {
+        throw new RuntimeException('No browser available');
+    });
+
+    $invoice = draftInvoice();
+
+    $this->get("/portal/invoices/{$invoice->public_token}/pdf")
+        ->assertOk()
+        ->assertSee($invoice->invoice_number);
+});
