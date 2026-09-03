@@ -43,7 +43,6 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
         $app['config']->set('travel-invoicing.routes.register_admin', true);
         $app['config']->set('travel-invoicing.routes.register_public', true);
-        $app['config']->set('travel-invoicing.routes.register_api', true);
         $app['config']->set('travel-invoicing.routes.middleware', ['web']);
         $app['config']->set('travel-invoicing.routes.public_middleware', ['web']);
 

@@ -7,18 +7,22 @@ use Kreetancraft\TravelInvoicing\Enums\InvoiceStatus;
 use Kreetancraft\TravelInvoicing\Models\Invoice;
 
 /**
- * Who may reach the API.
+ * What this package exposes over HTTP, and what it deliberately does not.
  *
- * Every one of these endpoints is staff work, and none of them was protected:
- * the group carried only `api` middleware and every form request answered
- * `authorize(): true`. Anyone who found the URL could list every invoice with
- * buyer names and amounts, create invoices, delete them, or credit one with a
- * payment that never happened.
+ * It used to ship a REST API — index, store, show, destroy for both invoices and
+ * quotes, plus an endpoint that credited an invoice with a payment — on the
+ * `api` middleware with every form request answering `authorize(): true`. Anyone
+ * who found the URL could list every invoice with buyer names and amounts,
+ * create them, delete them, or record money that never arrived.
  *
- * The donor application never exposed any of this publicly — its only
- * unauthenticated invoice routes are token-scoped reads and a checkout start.
+ * The donor application never had any of that. Its entire public surface is
+ * token-scoped: read the document, read its PDF, accept or reject a quote. An
+ * invoice is created from a booking, in code, never over HTTP.
+ *
+ * So the API is gone rather than merely protected. These tests hold that line —
+ * if someone adds a create endpoint back, they fail.
  */
-function existingInvoice(): Invoice
+function portalInvoice(): Invoice
 {
     return app(CreateInvoiceAction::class)->handle([
         'buyer_name' => 'Toby Flenderson',
@@ -30,68 +34,58 @@ function existingInvoice(): Invoice
     ]);
 }
 
-it('does not let a stranger list the invoices', function (): void {
-    existingInvoice();
-
-    $this->getJson('/api/v1/invoicing/invoices')->assertUnauthorized();
+it('exposes no endpoint that lists invoices', function (): void {
+    $this->getJson('/api/v1/invoicing/invoices')->assertNotFound();
 });
 
-it('does not let a stranger create an invoice', function (): void {
+it('exposes no endpoint that creates an invoice', function (): void {
     $this->postJson('/api/v1/invoicing/invoices', [
         'buyer_name' => 'Nobody',
         'buyer_email' => 'nobody@example.com',
         'issue_date' => now()->toDateString(),
-        'items' => [
-            ['description' => 'Free trek', 'quantity' => 1, 'unit_price_cents' => 0],
-        ],
-    ])->assertUnauthorized();
+        'items' => [['description' => 'Free trek', 'quantity' => 1, 'unit_price_cents' => 0]],
+    ])->assertNotFound();
 
     expect(Invoice::count())->toBe(0);
 });
 
-it('does not let a stranger read one invoice', function (): void {
-    $invoice = existingInvoice();
+it('exposes no endpoint that deletes an invoice', function (): void {
+    $invoice = portalInvoice();
 
-    $this->getJson("/api/v1/invoicing/invoices/{$invoice->id}")->assertUnauthorized();
-});
-
-it('does not let a stranger delete an invoice', function (): void {
-    $invoice = existingInvoice();
-
-    $this->deleteJson("/api/v1/invoicing/invoices/{$invoice->id}")->assertUnauthorized();
+    $this->deleteJson("/api/v1/invoicing/invoices/{$invoice->id}")->assertNotFound();
 
     expect(Invoice::find($invoice->id))->not->toBeNull();
 });
 
-it('does not let a stranger credit an invoice with a payment', function (): void {
-    // The worst of them: money recorded against an invoice by anyone at all.
-    $invoice = existingInvoice();
+it('exposes no endpoint that credits an invoice with a payment', function (): void {
+    // The worst of the ones removed: money recorded by anyone at all. Recording
+    // a payment now happens on the invoice screen, authorized against the
+    // invoice, or through the gateway listener.
+    $invoice = portalInvoice();
 
     $this->postJson("/api/v1/invoicing/invoices/{$invoice->id}/payments", [
         'amount_cents' => 50000,
         'gateway' => 'cash',
-    ])->assertUnauthorized();
+    ])->assertNotFound();
 
-    expect($invoice->fresh()->amount_paid_cents)->toBe(0)
-        ->and($invoice->fresh()->status)->not->toBe(InvoiceStatus::Paid);
+    expect($invoice->fresh()->amount_paid_cents)->toBe(0);
 });
 
-it('does not let a stranger list or create quotes', function (): void {
-    $this->getJson('/api/v1/invoicing/quotes')->assertUnauthorized();
-    $this->postJson('/api/v1/invoicing/quotes', [])->assertUnauthorized();
-});
-
-it('still answers the health check without a login', function (): void {
-    // Deliberately open: it reveals nothing and monitoring needs it.
-    $this->getJson('/api/v1/invoicing/health')
-        ->assertOk()
-        ->assertJson(['status' => 'ok']);
+it('exposes no endpoint that lists or creates quotes', function (): void {
+    $this->getJson('/api/v1/invoicing/quotes')->assertNotFound();
+    $this->postJson('/api/v1/invoicing/quotes', [])->assertNotFound();
 });
 
 it('still lets a customer open their own invoice by token', function (): void {
-    // The customer-facing path is not behind auth and must not be — it is
-    // reached by an unguessable per-document token instead.
-    $invoice = existingInvoice();
+    // The surface that remains, and the one the donor keeps: unguessable
+    // per-document tokens, so a buyer reaches their own invoice without an
+    // account and cannot enumerate anyone else's.
+    $invoice = portalInvoice();
 
     $this->get("/portal/invoices/{$invoice->public_token}")->assertOk();
+    $this->get("/portal/invoices/{$invoice->public_token}/pdf")->assertOk();
+});
+
+it('still refuses a token that does not exist', function (): void {
+    $this->get('/portal/invoices/not-a-real-token')->assertNotFound();
 });

@@ -199,14 +199,5 @@ class TravelInvoicingServiceProvider extends ServiceProvider
                 $this->loadRoutesFrom(__DIR__.'/../../routes/public.php');
             });
         }
-
-        if (config('travel-invoicing.routes.register_api', true)) {
-            Route::group([
-                'prefix' => config('travel-invoicing.routes.api_prefix', 'api/v1/invoicing'),
-                'middleware' => config('travel-invoicing.routes.api_middleware', ['api']),
-            ], function (): void {
-                $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
-            });
-        }
     }
 }

@@ -22,9 +22,8 @@ it('creates a commercial quote proposal with itemized pricing and deposit', func
         'deposit_percent' => 25,
         'discount_amount_cents' => 10000, // $100 discount
     ], [
-        // Line items are the second argument. Both real callers split them out
-        // of the payload — see InvoiceApiController:25-29 — because they are
-        // rows in another table, not columns on this one.
+        // Line items are the second argument, because they are rows in another
+        // table rather than columns on this one.
         [
             'title' => 'Trek Package (Per Person)',
             'quantity' => 2,
