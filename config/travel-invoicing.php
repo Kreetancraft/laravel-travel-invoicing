@@ -52,6 +52,11 @@ return [
         'middleware' => ['web', 'auth'],
         'public_middleware' => ['web'],
         'api_middleware' => ['api'],
+
+        // Everything the API exposes is staff work — listing invoices, creating
+        // them, deleting them, recording money against them. None of it belongs
+        // to a visitor, so it all sits behind this.
+        'protected_middleware' => ['auth'],
         'home' => 'dashboard',
 
         'names' => [
