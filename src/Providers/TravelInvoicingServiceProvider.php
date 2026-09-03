@@ -35,6 +35,7 @@ use Kreetancraft\TravelInvoicing\Policies\QuotePolicy;
 use Kreetancraft\TravelInvoicing\Repositories\InvoicesRepository;
 use Kreetancraft\TravelInvoicing\Repositories\InvoicingSettingsRepository;
 use Kreetancraft\TravelInvoicing\Repositories\QuotesRepository;
+use Kreetancraft\TravelInvoicing\TravelInvoicingManager;
 use Livewire\Livewire;
 
 class TravelInvoicingServiceProvider extends ServiceProvider
@@ -58,6 +59,11 @@ class TravelInvoicingServiceProvider extends ServiceProvider
         $this->app->bind(QuotesContract::class, QuotesRepository::class);
         $this->app->bind(InvoicesContract::class, InvoicesRepository::class);
         $this->app->bind(InvoicingSettingsContract::class, InvoicingSettingsRepository::class);
+
+        // The facade's accessor. It used to resolve to QuotesContract while its
+        // docblock advertised createQuote(), createInvoice() and getSettings(),
+        // none of which exist there — so every documented call threw.
+        $this->app->singleton(TravelInvoicingManager::class);
 
         $this->registerNavigation();
     }

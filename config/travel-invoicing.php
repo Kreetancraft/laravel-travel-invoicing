@@ -89,6 +89,9 @@ return [
         'quote_prefix' => env('QUOTE_NUMBER_PREFIX', 'QT'),
         'invoice_prefix' => env('INVOICE_NUMBER_PREFIX', 'INV'),
         'pad_length' => 4,
+
+        // INV-2026-0001 with the year, INV-0001 without.
+        'include_year' => true,
         'default_deposit_percent' => (int) env('TRAVEL_DEFAULT_DEPOSIT_PERCENT', 20),
         'quote_validity_days' => (int) env('TRAVEL_QUOTE_VALIDITY_DAYS', 14),
         'bank_account_details' => env('TRAVEL_BANK_DETAILS', "Bank: Himalayan Bank Ltd\nAccount Name: Himalayan Trek & Tours Pvt Ltd\nAccount Number: 01900001234567\nSWIFT: HIMANPKA\nBranch: Thamel, Kathmandu"),

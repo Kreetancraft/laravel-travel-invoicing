@@ -10,7 +10,21 @@ class DocumentCounter extends Model
 {
     public $incrementing = false;
 
-    protected $primaryKey = ['type', 'year'];
+    /**
+     * There is no single-column key, and Eloquent cannot express the pair.
+     *
+     * The table's key is (type, year). This used to be declared as
+     * `['type', 'year']`, which Eloquent does not support: `save()` on an
+     * existing row reaches `getKeyForSaveQuery()` and throws "Cannot access
+     * offset of type array on array". The first document of a year inserted
+     * cleanly and the second one died, every year.
+     *
+     * Writes go through the query builder in
+     * GenerateSequentialDocumentNumberAction, which needs no key. Declaring none
+     * here is honest about that; declaring a fake one invites somebody to call
+     * `save()` and meet the same crash.
+     */
+    protected $primaryKey = 'type';
 
     protected $fillable = [
         'type',

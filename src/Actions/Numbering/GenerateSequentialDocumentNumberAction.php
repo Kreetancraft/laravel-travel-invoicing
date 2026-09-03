@@ -29,9 +29,13 @@ class GenerateSequentialDocumentNumberAction
             $settingsPrefix = $type === 'quote' ? ($settings->quote_prefix ?? null) : ($settings->invoice_prefix ?? null);
         } catch (\Throwable) {
         }
-        $prefix = (string) ($settingsPrefix ?? config("travel-invoicing.defaults.{$type}_prefix", config("travel-invoicing.numbering.{$type}_prefix", strtoupper(substr($type, 0, 3)))));
-        $padLength = (int) config('travel-invoicing.defaults.pad_length', config('travel-invoicing.numbering.pad_length', 4));
-        $includeYear = (bool) config('travel-invoicing.numbering.include_year', true);
+        // Settings row first, then config, then the first three letters of the
+        // type. The middle step used to consult `travel-invoicing.numbering.*`,
+        // a key this package has never defined — so it was always skipped and
+        // read as a configurable option that was not one.
+        $prefix = (string) ($settingsPrefix ?? config("travel-invoicing.defaults.{$type}_prefix", strtoupper(substr($type, 0, 3))));
+        $padLength = (int) config('travel-invoicing.defaults.pad_length', 4);
+        $includeYear = (bool) config('travel-invoicing.defaults.include_year', true);
 
         return DB::transaction(function () use ($type, $year, $prefix, $padLength, $includeYear): string {
             $counterClass = config('travel-invoicing.models.document_counter', DocumentCounter::class);
