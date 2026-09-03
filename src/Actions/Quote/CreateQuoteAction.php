@@ -9,6 +9,7 @@ use Kreetancraft\TravelInvoicing\Actions\Numbering\GenerateSequentialDocumentNum
 use Kreetancraft\TravelInvoicing\Enums\QuoteStatus;
 use Kreetancraft\TravelInvoicing\Events\QuoteCreated;
 use Kreetancraft\TravelInvoicing\Models\Quote;
+use Kreetancraft\TravelInvoicing\Support\CustomerLink;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateQuoteAction
@@ -27,6 +28,14 @@ class CreateQuoteAction
     {
         return DB::transaction(function () use ($data, $items): Quote {
             $quoteClass = config('travel-invoicing.models.quote', Quote::class);
+
+            // Same seam as the invoice: snapshot the buyer on the document, and
+            // link it to a customer record when the host has one.
+            $data['customer_id'] ??= CustomerLink::idFor($data['buyer_email'] ?? null, [
+                'name' => $data['buyer_name'] ?? null,
+                'phone' => $data['buyer_phone'] ?? null,
+                'country' => $data['buyer_country'] ?? null,
+            ]);
 
             if (empty($data['quote_reference'])) {
                 $data['quote_reference'] = $this->numberGenerator->handle('quote');

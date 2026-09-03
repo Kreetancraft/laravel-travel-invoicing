@@ -104,6 +104,26 @@ return [
     |
     */
     'image_resolver' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Customer Resolution (Seam with Travel Customers)
+    |--------------------------------------------------------------------------
+    |
+    | Invoices and quotes snapshot the buyer's name and email, which is what a
+    | document must do. This links them to a customer record as well, so the same
+    | buyer's documents hang together and someone can ask what a customer has
+    | spent.
+    |
+    | Point it at anything exposing `findOrCreateByEmail($email, $attributes)` —
+    | kreetancraft/laravel-travel-customers' CustomersContract does — or at a
+    | closure. Leave it null and documents simply carry no customer id.
+    |
+    |   'customer_resolver' => \Kreetancraft\TravelCustomers\Contracts\CustomersContract::class,
+    |
+    */
+
+    'customer_resolver' => null,
     'media_picker_view' => null,
 
     'collections' => [

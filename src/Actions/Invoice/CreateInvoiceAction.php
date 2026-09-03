@@ -9,6 +9,7 @@ use Kreetancraft\TravelInvoicing\Actions\Numbering\GenerateSequentialDocumentNum
 use Kreetancraft\TravelInvoicing\Enums\InvoiceStatus;
 use Kreetancraft\TravelInvoicing\Events\InvoiceIssued;
 use Kreetancraft\TravelInvoicing\Models\Invoice;
+use Kreetancraft\TravelInvoicing\Support\CustomerLink;
 use Lorisleiva\Actions\Concerns\AsAction;
 
 class CreateInvoiceAction
@@ -27,6 +28,15 @@ class CreateInvoiceAction
     {
         return DB::transaction(function () use ($data, $items): Invoice {
             $invoiceClass = config('travel-invoicing.models.invoice', Invoice::class);
+
+            // Link the document to a customer record when the host has a
+            // customer package. The buyer snapshot on the document is unaffected
+            // — this only fills in `customer_id`, which nothing used to set.
+            $data['customer_id'] ??= CustomerLink::idFor($data['buyer_email'] ?? null, [
+                'name' => $data['buyer_name'] ?? null,
+                'phone' => $data['buyer_phone'] ?? null,
+                'country' => $data['buyer_country'] ?? null,
+            ]);
 
             if (empty($data['invoice_number'])) {
                 $data['invoice_number'] = $this->numberGenerator->handle('invoice');
