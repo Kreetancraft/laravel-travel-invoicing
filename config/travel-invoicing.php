@@ -127,6 +127,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Paying online (Seam with a payment gateway)
+    |--------------------------------------------------------------------------
+    |
+    | The customer portal shows what is owed. This is what lets someone act on
+    | it. Null means no pay buttons — right for a host that takes bank transfer
+    | only, and what this package did before.
+    |
+    | Given the invoice and either 'deposit' or 'balance', return where to send
+    | them. With kreetancraft/laravel-payment-gateway:
+    |
+    |   'checkout_url' => fn ($invoice, $portion) => route('payment.checkout', [
+    |       'payableType' => 'invoice',
+    |       'payableId' => $invoice->getKey(),
+    |       'amountType' => $portion,
+    |   ]),
+    |
+    | This package never learns how money is taken; it asks for a URL.
+    |
+    */
+
+    'checkout_url' => null,
+
+    /*
+    |--------------------------------------------------------------------------
     | PDF generation
     |--------------------------------------------------------------------------
     |

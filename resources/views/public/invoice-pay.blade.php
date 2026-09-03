@@ -91,6 +91,54 @@
                 </tfoot>
             </table>
 
+            {{--
+                Somewhere to actually pay. This page is named `invoice-pay` and
+                had no way to pay from it — a customer who accepted a quote saw
+                what they owed and was left to arrange a transfer by hand.
+
+                Shown only when the host has wired a gateway, and only while
+                something is outstanding. The deposit is offered separately while
+                it is genuinely a smaller first step.
+            --}}
+            @php
+                $balanceUrl = \Kreetancraft\TravelInvoicing\Support\CheckoutLink::for($invoice, 'balance');
+                $depositUrl = \Kreetancraft\TravelInvoicing\Support\CheckoutLink::for($invoice, 'deposit');
+                $offersDeposit = \Kreetancraft\TravelInvoicing\Support\CheckoutLink::offersDeposit($invoice);
+                $depositCents = \Kreetancraft\TravelInvoicing\Support\CheckoutLink::amountCentsFor($invoice, 'deposit');
+            @endphp
+
+            @if ($balanceUrl)
+                <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950/40">
+                    <div class="text-xs font-bold uppercase tracking-wider text-indigo-500">{{ __('Pay online') }}</div>
+
+                    <div class="mt-3 flex flex-col gap-3 sm:flex-row">
+                        @if ($offersDeposit && $depositUrl)
+                            <a href="{{ $depositUrl }}" class="flex-1 rounded-lg bg-indigo-600 px-5 py-3 text-center text-sm font-semibold text-white shadow-xs transition-colors hover:bg-indigo-700">
+                                {{ __('Pay deposit — :amount', [
+                                    'amount' => \Kreetancraft\TravelInvoicing\Support\MoneyFormatter::formatCents($depositCents, $invoice->currency),
+                                ]) }}
+                            </a>
+                        @endif
+
+                        <a href="{{ $balanceUrl }}" @class([
+                            'flex-1 rounded-lg px-5 py-3 text-center text-sm font-semibold transition-colors',
+                            'bg-indigo-600 text-white shadow-xs hover:bg-indigo-700' => ! $offersDeposit,
+                            'border border-indigo-300 text-indigo-700 hover:bg-indigo-100 dark:border-indigo-700 dark:text-indigo-300 dark:hover:bg-indigo-900/40' => $offersDeposit,
+                        ])>
+                            {{ $offersDeposit
+                                ? __('Pay in full — :amount', ['amount' => $invoice->formatted_balance_due])
+                                : __('Pay :amount', ['amount' => $invoice->formatted_balance_due]) }}
+                        </a>
+                    </div>
+
+                    @if ($offersDeposit)
+                        <p class="mt-3 text-xs text-indigo-700 dark:text-indigo-300">
+                            {{ __('Paying the deposit secures your booking. The balance stays payable from this same page.') }}
+                        </p>
+                    @endif
+                </div>
+            @endif
+
             <!-- Bank Wire Details (from InvoicingSettings) -->
             @if($settings && $settings->bank_account_details)
                 <div class="rounded-xl bg-zinc-50 p-4 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-700 text-sm space-y-1">
