@@ -104,17 +104,66 @@
                 </div>
             @endif
 
+            {{--
+                Flash and validation output. Neither was rendered, so a failed
+                Accept looked identical to no Accept, and a successful one never
+                said the invoice had been generated.
+            --}}
+            @if (session('success'))
+                <div class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="mb-6 rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                    <ul class="list-disc space-y-1 ps-5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <!-- Response Actions (if pending) -->
             @if(in_array($quote->status, [\Kreetancraft\TravelInvoicing\Enums\QuoteStatus::Sent, \Kreetancraft\TravelInvoicing\Enums\QuoteStatus::Draft]))
                 <div class="border-t border-zinc-100 dark:border-zinc-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <a href="{{ route('travel-invoicing.pdf.quote', $quote->public_token) }}" target="_blank" class="text-xs text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 underline">
                         {{ __('Download Official PDF Proposal') }}
                     </a>
-                    <div class="flex items-center gap-3">
-                        <form method="POST" action="{{ route('travel-invoicing.public.quote.accept', $quote->public_token) }}">
+                    <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+                        {{--
+                            The terms checkbox is required by AcceptQuoteRequest
+                            (`agreed_terms` => required|accepted) and was missing
+                            from this form entirely. Every Accept therefore failed
+                            validation, redirected back with a 302, and left the
+                            customer on the same page with nothing said — the
+                            quote could not be accepted at all.
+                        --}}
+                        <form method="POST" action="{{ route('travel-invoicing.public.quote.accept', $quote->public_token) }}" class="flex flex-col gap-3">
                             @csrf
+
+                            <label class="flex items-start gap-2 text-xs text-zinc-600 dark:text-zinc-400">
+                                <input
+                                    type="checkbox"
+                                    name="agreed_terms"
+                                    value="1"
+                                    @checked(old('agreed_terms'))
+                                    class="mt-0.5 rounded border-zinc-300 dark:border-zinc-600"
+                                >
+                                <span>{{ __('I have read and agree to the terms of this proposal.') }}</span>
+                            </label>
+
                             <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-xs transition-colors">
                                 {{ __('Accept & Confirm Proposal') }}
+                            </button>
+                        </form>
+
+                        {{-- The reject route and controller existed with nothing to reach them. --}}
+                        <form method="POST" action="{{ route('travel-invoicing.public.quote.reject', $quote->public_token) }}">
+                            @csrf
+                            <button type="submit" class="px-5 py-2.5 border border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800 text-sm font-semibold rounded-lg transition-colors">
+                                {{ __('Decline') }}
                             </button>
                         </form>
                     </div>

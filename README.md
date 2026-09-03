@@ -144,3 +144,69 @@ Two things that matter and are easy to miss:
   before the redirect lands. `PaymentSucceeded` fires wherever the payment
   settles, including from the webhook and the reconcile sweep, which is why it is
   the right thing to hang this on.
+
+
+## Documents and email
+
+### PDFs are rendered on the queue
+
+Driving a headless browser takes seconds, which is far too long to make a
+customer wait for a page. So rendering is a queued job and the file's location is
+stored on `invoices.pdf_path`.
+
+Nothing is produced until you choose an engine — the printable HTML view serves
+either way:
+
+```bash
+composer require spatie/laravel-pdf
+```
+
+```php
+// config/travel-invoicing.php
+'pdf' => [
+    'renderer' => \Kreetancraft\TravelInvoicing\Support\Pdf\SpatiePdfRenderer::class,
+    'disk' => 'local',
+    'directory' => 'invoices',
+],
+```
+
+`spatie/laravel-pdf` drives a real browser, so the PDF matches the page rather
+than approximating it — at the cost of Node and Puppeteer on the server. Anything
+exposing `render(string $html): string`, or a closure, works instead.
+
+A renderer that throws is logged and swallowed. An invoice without a PDF is
+recoverable by re-running the job; a queue endlessly retrying a browser that will
+never start is not.
+
+### One invoice, one receipt per payment
+
+Email is off until you turn it on, because a package that quietly mails your
+customers on install is worse than one that does not:
+
+```php
+'mail' => ['enabled' => true],
+```
+
+Then:
+
+* **The invoice is emailed once**, when it is issued, with the PDF attached if one
+  exists.
+* **Every payment gets its own receipt**, saying what was paid and what remains.
+
+The invoice is never re-sent. A deposit and a balance are two receipts and one
+bill — sending the invoice again after a part payment puts two documents in the
+customer's inbox both claiming to be what they owe, which is how somebody pays
+twice.
+
+### Overdue invoices
+
+`overdue` is a real stage, not a computed guess, so schedule the sweep:
+
+```php
+// routes/console.php
+Schedule::command('invoicing:mark-overdue')->dailyAt('02:00');
+```
+
+It moves issued and partially-paid invoices past their due date, and leaves paid
+and void ones alone — an invoice settled late is not overdue afterwards, and a
+cancelled one is not owed at all. `--dry-run` lists what would change.

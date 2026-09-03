@@ -40,7 +40,8 @@
         "kreetancraft/laravel-media-manager": "Company branding logos, stamp uploads, and proposal media attachments.",
         "kreetancraft/laravel-user-management": "Discovers quote & invoice policies and creates their permissions automatically.",
         "kreetancraft/laravel-travel-customers": "Links quotes and invoices to traveler profiles and customer groups.",
-        "kreetancraft/laravel-payment-gateway": "Enables instant online card, bank, and QR payments from client invoice portals."
+        "kreetancraft/laravel-payment-gateway": "Enables instant online card, bank, and QR payments from client invoice portals.",
+        "spatie/laravel-pdf": "Renders invoices and proposals to PDF through a real headless browser, so the file matches the page a customer sees. Point travel-invoicing.pdf.renderer at SpatiePdfRenderer once installed."
     },
     "autoload": {
         "psr-4": {

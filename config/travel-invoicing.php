@@ -124,6 +124,53 @@ return [
     */
 
     'customer_resolver' => null,
+
+    /*
+    |--------------------------------------------------------------------------
+    | PDF generation
+    |--------------------------------------------------------------------------
+    |
+    | Rendering happens on the queue, because driving a headless browser takes
+    | seconds and no customer should wait for it. The resulting file's path is
+    | stored on the invoice.
+    |
+    | `renderer` decides the engine, and null means no files are produced — the
+    | printable HTML view still serves, which is what this package did before.
+    | For spatie/laravel-pdf:
+    |
+    |   composer require spatie/laravel-pdf
+    |   'renderer' => \Kreetancraft\TravelInvoicing\Support\Pdf\SpatiePdfRenderer::class,
+    |
+    | It drives a real browser, so the PDF matches the page a customer sees — at
+    | the cost of needing Node and Puppeteer on the server. Anything exposing
+    | `render(string $html): string`, or a closure, works just as well.
+    |
+    */
+
+    'pdf' => [
+        'renderer' => null,
+        'disk' => 'local',
+        'directory' => 'invoices',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Email
+    |--------------------------------------------------------------------------
+    |
+    | Off by default. A package that quietly emails your customers the moment it
+    | is installed is worse than one that does not, so this is something you turn
+    | on deliberately.
+    |
+    | When on: the invoice is emailed once, when it is issued, and every payment
+    | gets its own receipt. The invoice is never re-sent — two documents both
+    | claiming to be the bill is how a customer pays twice.
+    |
+    */
+
+    'mail' => [
+        'enabled' => false,
+    ],
     'media_picker_view' => null,
 
     'collections' => [

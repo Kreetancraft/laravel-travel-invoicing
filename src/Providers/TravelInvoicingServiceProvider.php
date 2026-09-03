@@ -9,10 +9,14 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Kreetancraft\TravelInvoicing\Console\MarkOverdueInvoicesCommand;
 use Kreetancraft\TravelInvoicing\Contracts\InvoicesContract;
 use Kreetancraft\TravelInvoicing\Contracts\InvoicingSettingsContract;
 use Kreetancraft\TravelInvoicing\Contracts\QuotesContract;
+use Kreetancraft\TravelInvoicing\Events\InvoiceIssued;
+use Kreetancraft\TravelInvoicing\Events\InvoicePaymentRecorded;
 use Kreetancraft\TravelInvoicing\Listeners\RecordGatewayPayment;
+use Kreetancraft\TravelInvoicing\Listeners\SendInvoiceDocuments;
 use Kreetancraft\TravelInvoicing\Livewire\Invoices\CreateInvoice;
 use Kreetancraft\TravelInvoicing\Livewire\Invoices\EditInvoice;
 use Kreetancraft\TravelInvoicing\Livewire\Invoices\ManageInvoices;
@@ -66,6 +70,7 @@ class TravelInvoicingServiceProvider extends ServiceProvider
         $this->registerRoutes();
         $this->registerLivewire();
         $this->registerPaymentListener();
+        $this->registerCommands();
 
         foreach (self::POLICIES as $model => $policy) {
             Gate::policy($model, $policy);
@@ -120,6 +125,24 @@ class TravelInvoicingServiceProvider extends ServiceProvider
      * `travel-invoicing.payment_succeeded_event` to null to opt out, or to a
      * different class to listen for something else.
      */
+    /**
+     * Console commands, offered only to the console.
+     *
+     * `invoicing:mark-overdue` wants a schedule. A package cannot schedule for
+     * its host — the host decides how often — so the README asks for a daily
+     * entry rather than registering one here.
+     */
+    protected function registerCommands(): void
+    {
+        if (! $this->app->runningInConsole()) {
+            return;
+        }
+
+        $this->commands([
+            MarkOverdueInvoicesCommand::class,
+        ]);
+    }
+
     protected function registerPaymentListener(): void
     {
         $event = config('travel-invoicing.payment_succeeded_event');
@@ -129,6 +152,9 @@ class TravelInvoicingServiceProvider extends ServiceProvider
         }
 
         Event::listen($event, RecordGatewayPayment::class);
+
+        Event::listen(InvoiceIssued::class, [SendInvoiceDocuments::class, 'onIssued']);
+        Event::listen(InvoicePaymentRecorded::class, [SendInvoiceDocuments::class, 'onPaymentRecorded']);
     }
 
     protected function registerConfig(): void
