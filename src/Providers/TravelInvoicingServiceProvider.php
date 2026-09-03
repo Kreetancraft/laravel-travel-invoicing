@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace Kreetancraft\TravelInvoicing\Providers;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Kreetancraft\TravelInvoicing\Contracts\InvoicesContract;
 use Kreetancraft\TravelInvoicing\Contracts\InvoicingSettingsContract;
 use Kreetancraft\TravelInvoicing\Contracts\QuotesContract;
+use Kreetancraft\TravelInvoicing\Listeners\RecordGatewayPayment;
 use Kreetancraft\TravelInvoicing\Livewire\Invoices\CreateInvoice;
 use Kreetancraft\TravelInvoicing\Livewire\Invoices\EditInvoice;
 use Kreetancraft\TravelInvoicing\Livewire\Invoices\ManageInvoices;
@@ -63,6 +65,7 @@ class TravelInvoicingServiceProvider extends ServiceProvider
         $this->registerMigrations();
         $this->registerRoutes();
         $this->registerLivewire();
+        $this->registerPaymentListener();
 
         foreach (self::POLICIES as $model => $policy) {
             Gate::policy($model, $policy);
@@ -107,6 +110,25 @@ class TravelInvoicingServiceProvider extends ServiceProvider
         ]);
 
         $this->app->tag('travel-invoicing.navigation.items', 'admin.navigation');
+    }
+
+    /**
+     * Listen for a payment gateway telling us money arrived.
+     *
+     * Subscribed by string, so this costs nothing on a host that has no payment
+     * package — the event never fires and the listener is never resolved. Set
+     * `travel-invoicing.payment_succeeded_event` to null to opt out, or to a
+     * different class to listen for something else.
+     */
+    protected function registerPaymentListener(): void
+    {
+        $event = config('travel-invoicing.payment_succeeded_event');
+
+        if (blank($event)) {
+            return;
+        }
+
+        Event::listen($event, RecordGatewayPayment::class);
     }
 
     protected function registerConfig(): void

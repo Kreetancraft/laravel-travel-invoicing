@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use Kreetancraft\PaymentGateway\Events\PaymentSucceeded;
 use Kreetancraft\TravelInvoicing\Models\DocumentCounter;
 use Kreetancraft\TravelInvoicing\Models\Invoice;
 use Kreetancraft\TravelInvoicing\Models\InvoiceItem;
@@ -119,6 +120,21 @@ return [
     | Eloquent Models
     |--------------------------------------------------------------------------
     */
+    /*
+    |--------------------------------------------------------------------------
+    | The event that means a payment succeeded
+    |--------------------------------------------------------------------------
+    |
+    | When this fires, the invoice it was paid against is credited. Named as a
+    | string so this package does not depend on whichever payment package you
+    | use, and so a host with none pays nothing for the feature.
+    |
+    | Set it to null to handle payments yourself.
+    |
+    */
+
+    'payment_succeeded_event' => PaymentSucceeded::class,
+
     'models' => [
         'document_counter' => DocumentCounter::class,
         'invoicing_setting' => InvoicingSetting::class,
