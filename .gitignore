@@ -6,3 +6,9 @@ composer.lock
 .env.backup
 .env.production
 .php-cs-fixer.cache
+
+# The local bench: a throwaway host app for driving the admin screens and the
+# customer portal. Useful on a developer's machine, not part of what a host
+# application installs, so it stays out of the repository.
+/testbench.yaml
+/workbench
